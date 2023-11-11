@@ -1,0 +1,13 @@
+# EditorConfig is awesome: https://editorconfig.org/
+
+# This is the root EditorConfig file
+root = true
+
+[*]
+# Encode as UTF-8
+charset = utf-8
+
+# Use the LF character as a line terminator
+end_of_line = lf
+# Insert newlines
+insert_final_newline = true
