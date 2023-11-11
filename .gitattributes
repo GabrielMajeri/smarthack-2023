@@ -1,0 +1,5 @@
+# This file is used to configure additional options for how to store files in Git.
+# See https://git-scm.com/docs/gitattributes for more info.
+
+# Automatically detect text files and store them using LF line endings.
+* text=auto eol=lf
