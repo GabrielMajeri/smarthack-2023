@@ -158,7 +158,7 @@ function AcquisitionsPlan() {
           View all
         </Link>
         <Link
-          href="/acquisitions/add"
+          href="/acquisitions/new"
           className="inline-block mt-20 shadow-[0_25px_30px_-15px_rgba(22,163,74,0.6)] bg-green-600 text-white font-bold px-10 py-3 rounded-lg"
         >
           Add new
