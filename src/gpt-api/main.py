@@ -1,39 +1,41 @@
 import logging
+import openai
+import helper
 
 from dotenv import dotenv_values
 from fastapi import FastAPI
-import openai
-
+from sqlalchemy import create_engine, select
+from sqlalchemy.engine import URL
+from sqlalchemy.orm import sessionmaker
 
 app = FastAPI()
 env = dotenv_values()
 logger = logging.getLogger('smarthack-api')
 
-
 ft_model = env['OPENAI_FT_MODEL']
-
 client = openai.OpenAI(api_key=env['OPENAI_API_KEY'])
+
+engine = create_engine(
+        URL.create(
+            drivername=env['POSTGRES_DRIVER'],
+            username=env['POSTGRES_USER'],
+            password=env['POSTGRES_PASS'],
+            host=env['POSTGRES_HOST'],
+            port=env['POSTGRES_PORT'],
+            database=env['POSTGRES_DB']
+    )
+)
+
+Session = sessionmaker(bind=engine)
 
 
 @app.get('/')
 async def root():
     return {'message': 'Hello world!'}
 
-@app.get('/test/')
-async def test():
-    response = client.chat.completions.create(
-        model=ft_model,
-        messages=[
-            {'role': 'system', 'content':'Esti un asistent folositor.'},
-            {'role': 'user', 'content': 'Salut!'}
-        ]
-    )
-
-    return {'message': response.choices[0].message.content}
-
 
 @app.post('/extract-product/')
-async def test(prompt: str):
+async def extract_product(prompt: str):
     response = client.chat.completions.create(
         model=ft_model,
         messages=[
@@ -60,7 +62,7 @@ async def test(prompt: str):
 
 
 @app.post('/synonym/')
-async def test(prompt: str, n: int):
+async def synonym(prompt: str, n: int):
     response = client.chat.completions.create(
         model=ft_model,
         messages=[
@@ -85,7 +87,7 @@ async def test(prompt: str, n: int):
 
 
 @app.post('/justification-notice/')
-async def test(prompt: str):
+async def justification(prompt: str):
     response = client.chat.completions.create(
         model=ft_model,
         messages=[
@@ -107,3 +109,34 @@ async def test(prompt: str):
         return {'content': ''}
 
     return {'content': formatted}
+
+
+@app.post('/conversation/')
+async def conversation(conv_id: int, msg: str):
+    session = Session()
+
+    conversation = [{"role": "system", "content": "DIRECTIVE_FOR_gpt-3.5-turbo"}]
+
+    current_messages = session.execute(select(helper.Message).where(helper.Message.conversation_id == conv_id).order_by(helper.Message.id)).all()
+    conversation += [{'role': m.Message.role, 'content': m.Message.content} for m in current_messages]
+
+    message = {'role': 'user', 'content': msg}
+    conversation.append(message)
+
+    session.add(helper.Message(conversation_id=1, content=message['content'], role="user"))
+    session.commit()
+
+    response = client.chat.completions.create(
+        model=ft_model,
+        messages=conversation
+    )
+
+    openai_response = response.choices[0].message
+
+    session.add(helper.Message(conversation_id=conv_id, content=openai_response.content, role="assistant"))
+    session.commit()
+
+    conversation.append(openai_response)
+    session.close()
+
+    return {'content': openai_response.content}
