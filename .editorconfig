@@ -11,3 +11,7 @@ charset = utf-8
 end_of_line = lf
 # Insert newlines
 insert_final_newline = true
+
+[*.{js,jsx,ts,tsx}]
+indent_size = 2
+indent_style = space
