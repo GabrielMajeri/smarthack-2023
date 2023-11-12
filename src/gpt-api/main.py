@@ -1,28 +1,32 @@
 import logging
 import openai
-import helper
+import os
 
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from sqlalchemy import create_engine, select
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker
 
+import helper
+
+load_dotenv()
+
 app = FastAPI()
-env = dotenv_values()
 logger = logging.getLogger('smarthack-api')
 
-ft_model = env['OPENAI_FT_MODEL']
-client = openai.OpenAI(api_key=env['OPENAI_API_KEY'])
+
+ft_model = os.environ['OPENAI_FT_MODEL'].strip()
+client = openai.OpenAI(api_key=os.environ['OPENAI_API_KEY'].strip())
 
 engine = create_engine(
         URL.create(
-            drivername=env['POSTGRES_DRIVER'],
-            username=env['POSTGRES_USER'],
-            password=env['POSTGRES_PASS'],
-            host=env['POSTGRES_HOST'],
-            port=env['POSTGRES_PORT'],
-            database=env['POSTGRES_DB']
+            drivername=os.environ['POSTGRES_DRIVER'],
+            username=os.environ['POSTGRES_USER'],
+            password=os.environ['POSTGRES_PASSWORD'],
+            host=os.environ['POSTGRES_HOST'],
+            port=os.environ['POSTGRES_PORT'],
+            database=os.environ['POSTGRES_DB']
     )
 )
 
@@ -47,7 +51,7 @@ async def extract_product(prompt: str):
                 'role': 'user',
                 'content':
                     f'''What does the following person try to buy:
-                    {prompt}    
+                    {prompt}
                     '''
             }
         ]
